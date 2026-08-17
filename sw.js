@@ -1,5 +1,5 @@
 /* 离线缓存：首次在线打开后，全部资源进入缓存，断网也能用 */
-const CACHE = 'training-tracker-v1';
+const CACHE = 'training-tracker-v2';
 const ASSETS = [
   './',
   './index.html',

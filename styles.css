@@ -159,10 +159,10 @@ main { padding: 4px 16px 0; }
 }
 .schulte-grid .cell {
   aspect-ratio: 1; border: none; border-radius: 12px;
-  background: var(--card2); color: var(--text);
+  background: #ffffff; color: #0f172a;
   font-size: 22px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .08);
 }
-.schulte-grid .cell.done { opacity: .25; }
 .schulte-grid .cell.wrong { background: var(--red); color: #fff; animation: shake .25s; }
 .schulte-grid .cell.cur { background: var(--accent); color: #fff; }
 .schulte-grid .cell:active { transform: scale(.94); }
@@ -198,6 +198,14 @@ main { padding: 4px 16px 0; }
 .best .b { text-align: center; }
 .best .b .v { font-size: 20px; font-weight: 700; color: var(--accent2); }
 .best .b .k { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+/* ===== 平板支撑计时 ===== */
+.plank-clock {
+  font-size: 56px; font-weight: 800; text-align: center;
+  font-variant-numeric: tabular-nums; color: var(--accent2);
+  line-height: 1.1; padding: 6px 0 2px;
+}
+.plank-status { text-align: center; color: var(--muted); font-size: 13px; margin: 8px 0 12px; }
 
 /* ===== 弹窗 ===== */
 .modal-mask {
@@ -245,3 +253,29 @@ nav.bottom a.on .ico { transform: translateY(-1px); }
   opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 200;
 }
 .toast.show { opacity: 1; }
+
+/* ===== 舒尔特页白色主题 ===== */
+body.schulte-light { background: #f8fafc; color: #0f172a; }
+body.schulte-light header.top { background: #f8fafc; }
+body.schulte-light header.top .sub { color: #64748b; }
+body.schulte-light .card { background: #ffffff; }
+body.schulte-light .card h2 { color: #64748b; }
+body.schulte-light .seg { background: #e2e8f0; }
+body.schulte-light .seg button { color: #64748b; }
+body.schulte-light .seg button.on { background: var(--accent); color: #fff; }
+body.schulte-light .best { background: #ffffff; }
+body.schulte-light .best .b .v { color: #f59e0b; }
+body.schulte-light .best .b .k { color: #64748b; }
+body.schulte-light .chart-note { color: #64748b; }
+body.schulte-light .schulte-record { background: #f1f5f9; }
+body.schulte-light .schulte-record .sub { color: #64748b; }
+body.schulte-light #progress { color: #64748b; }
+body.schulte-light .timer { color: #0f172a; }
+body.schulte-light .del { color: #64748b; }
+body.schulte-light .del:active { color: var(--red); }
+body.schulte-light nav.bottom {
+  background: rgba(255, 255, 255, .95);
+  border-top-color: #e2e8f0;
+}
+body.schulte-light nav.bottom a { color: #64748b; }
+body.schulte-light nav.bottom a.on { color: var(--accent); }

@@ -52,6 +52,14 @@
       <p style="font-size:12px;color:var(--muted);margin-top:10px">点 ＋ 记录一次，点 － 调整。今天的数据会自动保存。</p>
     </section>
 
+    <!-- 平板支撑计时 -->
+    <section class="card">
+      <h2><span class="dot" style="background:var(--accent2)"></span>平板支撑计时</h2>
+      <div class="plank-clock" id="plank-clock">0:00</div>
+      <div class="plank-status" id="plank-status">准备好就点「开始」，结束时自动保存成绩</div>
+      <button class="btn" id="btn-plank">▶ 开始计时</button>
+    </section>
+
     <!-- 今日汇总 -->
     <section class="card">
       <h2><span class="dot" style="background:var(--green)"></span>今日汇总</h2>
@@ -170,6 +178,36 @@
       toast(key === 'pushups' ? '俯卧撑已保存' : '平板支撑已保存');
       refreshDay();
     }
+
+    // ===== 平板支撑计时 =====
+    let plank = { running: false, startTs: 0, timerId: null };
+    function fmtClock(ms) {
+      const total = Math.floor(ms / 1000);
+      return Math.floor(total / 60) + ':' + String(total % 60).padStart(2, '0');
+    }
+    function startPlank() {
+      if (plank.running) return;
+      plank.running = true;
+      plank.startTs = performance.now();
+      $('btn-plank').textContent = '■ 结束并保存';
+      $('plank-status').textContent = '计时中… 坚持住！';
+      plank.timerId = setInterval(() => {
+        $('plank-clock').textContent = fmtClock(performance.now() - plank.startTs);
+      }, 200);
+    }
+    function stopPlank() {
+      if (!plank.running) return;
+      clearInterval(plank.timerId);
+      plank.running = false;
+      const secs = Math.round((performance.now() - plank.startTs) / 1000);
+      $('plank-clock').textContent = fmtClock(secs * 1000);
+      setDay(currentDate, 'plank', secs);
+      toast('🧱 平板支撑 ' + secs + ' 秒，已保存');
+      $('btn-plank').textContent = '▶ 再来一次';
+      $('plank-status').textContent = '已保存到今天的记录';
+      refreshDay();
+    }
+    $('btn-plank').addEventListener('click', () => (plank.running ? stopPlank() : startPlank()));
 
     // ===== 事件 =====
     document.querySelectorAll('.stepper button').forEach((b) =>
