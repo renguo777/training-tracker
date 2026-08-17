@@ -33,6 +33,7 @@
       <div style="text-align:center;color:var(--muted);font-size:13px" id="progress">点击「开始」准备</div>
       <div class="schulte-grid s5" id="grid"></div>
       <button class="btn" id="btn-start">▶ 开始</button>
+      <button class="btn ghost" id="btn-quit" style="display:none">■ 放弃本次</button>
       <p class="chart-note">按顺序点击 1 → 2 → 3 … 直到最大数，点错不会停止计时。</p>
     </div>
 
@@ -110,6 +111,7 @@
       $('timer').textContent = '0.0';
       $('progress').textContent = '点击「开始」计时，从 1 开始按';
       $('btn-start').textContent = '▶ 开始';
+      $('btn-quit').style.display = 'none';
       renderGrid();
     }
 
@@ -124,9 +126,18 @@
       renderGrid();
       $('progress').textContent = '找到 1/' + (n * n);
       $('btn-start').textContent = '↻ 重新开始';
+      $('btn-quit').style.display = 'block';
       timerId = setInterval(() => {
         $('timer').textContent = fmtMs(performance.now() - startTs);
       }, 100);
+    }
+
+    // 中途放弃：停止计时、重新洗牌，不记录成绩
+    function quitRound() {
+      if (state.mode !== 'running') return;
+      clearInterval(timerId);
+      prepareBoard();
+      toast('已结束本次练习，成绩未保存');
     }
 
     function finish() {
@@ -138,6 +149,7 @@
       addSchulte(state.size, ms, errors);
       toast('🎉 完成 ' + state.size + '×' + state.size + '：' + fmtMs(ms) + ' 秒' + (errors ? '（点错 ' + errors + ' 次）' : ''));
       $('btn-start').textContent = '▶ 再来一次';
+      $('btn-quit').style.display = 'none';
       refreshStats(); refreshList(); renderChart();
     }
 
@@ -157,8 +169,9 @@
       if (state.mode !== 'running') return;
       const n = parseInt(btn.dataset.n);
       if (n === next) {
-        btn.classList.add('done');
         btn.disabled = true;
+        btn.classList.add('ok'); // 短暂高亮反馈，随后恢复原样
+        setTimeout(() => btn.classList.remove('ok'), 220);
         next++;
         const total = state.size * state.size;
         $('progress').textContent = next <= total ? '找到 ' + next + '/' + total : '';
@@ -281,6 +294,7 @@
     });
 
     $('btn-start').addEventListener('click', startRound);
+    $('btn-quit').addEventListener('click', quitRound);
 
     // ===== 启动 =====
     prepareBoard();
