@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="训练打卡">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <title>进度 · 训练打卡</title>
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>📈 训练进度</h1>
+      <div class="sub">看见每一次进步</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 指标切换 -->
+    <div class="seg" id="metric-seg">
+      <button data-metric="pushups" class="on">💪 俯卧撑</button>
+      <button data-metric="plank">🧱 平板支撑</button>
+    </div>
+
+    <!-- 时间范围 -->
+    <div class="seg" id="range-seg">
+      <button data-range="7" class="on">近7天</button>
+      <button data-range="30">近30天</button>
+      <button data-range="all">全部</button>
+    </div>
+
+    <!-- 最佳成绩 -->
+    <div class="best">
+      <div class="b"><div class="v" id="best-val">—</div><div class="k" id="best-lbl">最佳成绩</div></div>
+      <div class="b"><div class="v" id="avg-val">—</div><div class="k">平均</div></div>
+      <div class="b"><div class="v" id="days-val">—</div><div class="k">记录天数</div></div>
+    </div>
+
+    <!-- 图表 -->
+    <section class="card">
+      <h2><span class="dot" style="background:var(--accent)"></span><span id="chart-title">俯卧撑（个）</span></h2>
+      <div class="chart-box"><canvas id="chart"></canvas></div>
+      <p class="chart-note" id="chart-note">仅显示有记录的天；没练的天会自动跳过。</p>
+    </section>
+  </main>
+
+  <nav class="bottom">
+    <a href="index.html"><span class="ico">📝</span>记录</a>
+    <a href="charts.html" class="on"><span class="ico">📈</span>进度</a>
+    <a href="schulte.html"><span class="ico">🎯</span>舒尔特</a>
+  </nav>
+
+  <script src="data.js"></script>
+  <script src="chart.umd.min.js"></script>
+  <script>
+    'use strict';
+    const $ = (id) => document.getElementById(id);
+    let state = { metric: 'pushups', range: '7' };
+    let chart = null;
+
+    const META = {
+      pushups: { label: '俯卧撑', unit: '个', color: '#ff5e3a' },
+      plank:   { label: '平板支撑', unit: '秒', color: '#6c5ce7' }
+    };
+
+    function collectPoints(metric) {
+      // 返回 [{ date, value }]，按日期升序，只含有记录的天
+      const days = load().days;
+      const pts = [];
+      Object.keys(days).forEach((k) => {
+        const v = days[k][metric];
+        if (v != null && v > 0) pts.push({ date: k, value: v });
+      });
+      pts.sort((a, b) => a.date < b.date ? -1 : 1);
+
+      const n = pts.length;
+      if (!n) return pts;
+      if (state.range === 'all') return pts;
+      const limit = parseInt(state.range);
+      const today = dateOf(todayStr());
+      const start = new Date(today);
+      start.setDate(start.getDate() - (limit - 1));
+      const startStr = start.getFullYear() + '-' + String(start.getMonth() + 1).padStart(2, '0') + '-' + String(start.getDate()).padStart(2, '0');
+      return pts.filter((p) => p.date >= startStr);
+    }
+
+    function render() {
+      const meta = META[state.metric];
+      const pts = collectPoints(state.metric);
+
+      $('chart-title').textContent = meta.label + '（' + meta.unit + '）';
+      $('chart-note').textContent = pts.length
+        ? '共 ' + pts.length + ' 条记录' + (state.range !== 'all' ? '（近 ' + state.range + ' 天）' : '')
+        : '这个范围还没有记录，先去「记录」页打卡吧！';
+
+      // 统计
+      const values = pts.map((p) => p.value);
+      const best = values.length ? Math.max.apply(null, values) : null;
+      const sum = values.reduce((a, b) => a + b, 0);
+      const avg = values.length ? Math.round(sum / values.length * 10) / 10 : null;
+      const bestDay = best != null ? pts.find((p) => p.value === best).date : null;
+      $('best-val').textContent = best != null ? best + ' ' + meta.unit : '—';
+      $('best-lbl').textContent = '最佳成绩' + (bestDay ? '（' + bestDay.slice(5).replace('-', '/') + '）' : '');
+      $('avg-val').textContent = avg != null ? avg + ' ' + meta.unit : '—';
+      $('days-val').textContent = values.length ? values.length + ' 天' : '—';
+
+      // 图表
+      const labels = pts.map((p) => p.date.slice(5).replace('-', '/'));
+      const data = pts.map((p) => p.value);
+
+      if (chart) chart.destroy();
+
+      const grad = document.createElement('canvas').getContext('2d').createLinearGradient(0, 0, 0, 260);
+      grad.addColorStop(0, meta.color + '55');
+      grad.addColorStop(1, meta.color + '00');
+
+      chart = new Chart($('chart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: meta.label,
+            data: data,
+            borderColor: meta.color,
+            backgroundColor: grad,
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointBackgroundColor: meta.color,
+            pointHoverRadius: 6,
+            borderWidth: 2.5,
+            spanGaps: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#273449',
+              titleColor: '#f1f5f9',
+              bodyColor: '#f1f5f9',
+              displayColors: false,
+              callbacks: { label: (ctx) => ' ' + ctx.parsed.y + ' ' + meta.unit }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(51,65,85,.35)' },
+              ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(51,65,85,.35)' },
+              ticks: { color: '#94a3b8', precision: 0 }
+            }
+          }
+        }
+      });
+    }
+
+    $('metric-seg').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      state.metric = b.dataset.metric;
+      document.querySelectorAll('#metric-seg button').forEach((x) => x.classList.toggle('on', x === b));
+      render();
+    });
+    $('range-seg').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      state.range = b.dataset.range;
+      document.querySelectorAll('#range-seg button').forEach((x) => x.classList.toggle('on', x === b));
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
